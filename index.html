@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>3D樱花雨相册（简易版）</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iOSIgZmlsbD0icGlua2VkIi8+CjxjaXJjbGUgY3g9IjEwIiBjeT0iMTAiIHI9IjUiIGZpbGw9IiNmZmYiLz4KPC9zdmc+Cg==" type="image/svg+xml">
+</head>
+<body>
+  <!-- 背景星光 -->
+  <div class="stars"></div>
+  
+  <!-- 樱花粒子画布 -->
+  <canvas id="sakuraCanvas"></canvas>
+
+  <!-- 3D 照片立方体 -->
+  <div class="scene">
+    <div class="cube">
+      <div class="face front"><img src="photos/xx1.jpg" alt="16:9照片" loading="lazy" onclick="previewPhoto(this)"></div>
+      <div class="face back"><img src="photos/xx2.jpg" alt="4:3照片" loading="lazy" onclick="previewPhoto(this)"></div>
+      <div class="face right"><img src="photos/xx3.jpg" alt="9:16竖版照片" loading="lazy" onclick="previewPhoto(this)"></div>
+      <div class="face left"><img src="photos/xx4.jpg" alt="3:4竖版照片" loading="lazy" onclick="previewPhoto(this)"></div>
+      <div class="face top"><img src="photos/xx7.jpg" alt="正方形照片" loading="lazy" onclick="previewPhoto(this)"></div>
+      <div class="face bottom"><img src="photos/xx6.jpg" alt="2:1宽屏照片" loading="lazy" onclick="previewPhoto(this)"></div>
+    </div>
+  </div>
+
+  <!-- 文字叠加层 + 控制按钮 -->
+  <div class="overlay">
+    <h1>3D樱花雨相册（简易版）</h1>
+    <p onclick="showTip()">✨ 点击查看更多惊喜 ✨</p>
+    <div class="control-group">
+      <button class="control-btn" id="rotateBtn" onclick="toggleRotation()">旋转/暂停</button>
+      <button class="control-btn" onclick="changeSakuraDensity()">樱花密度切换</button>
+      <button class="control-btn" onclick="resetCube()">重置相册</button>
+    </div>
+  </div>
+
+  <!-- 照片预览弹窗 -->
+  <div class="preview-modal" id="previewModal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closePreview()">&times;</span>
+      <img src="" alt="照片预览" id="previewImg">
+    </div>
+  </div>
+
+  <!-- 自定义功能提示弹窗 -->
+  <div class="tip-modal" id="tipModal">
+    <div class="tip-content">
+      <h3>✨ 这个3D相册支持：</h3>
+      <ul>
+        <li>鼠标悬浮暂停旋转</li>
+        <li>自适应各种屏幕尺寸</li>
+        <li>沉浸式樱花雨特效</li>
+        <li>高清照片无失真展示</li>
+        <li>点击照片可放大预览</li>
+        <li>自定义控制旋转/樱花密度</li>
+      </ul>
+      <button class="tip-btn" onclick="closeTipModal()">确定</button>
+    </div>
+  </div>
+
+  <!-- 引入脚本 -->
+  <script src="sakura.js"></script>
+  <script>
+    // 全局状态
+    let isRotating = true;
+    let sakuraDensity = 1;
+    const cube = document.querySelector('.cube');
+    const previewModal = document.getElementById('previewModal');
+    const previewImg = document.getElementById('previewImg');
+    const scene = document.querySelector('.scene');
+    const rotateBtn = document.getElementById('rotateBtn');
+
+    // 自定义提示弹窗 - 打开
+    function showTip() {
+      const tipModal = document.getElementById('tipModal');
+      tipModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 自定义提示弹窗 - 关闭
+    function closeTipModal() {
+      const tipModal = document.getElementById('tipModal');
+      tipModal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    // 旋转/暂停控制
+    function toggleRotation() {
+      isRotating = !isRotating;
+      cube.style.animationPlayState = isRotating ? 'running' : 'paused';
+      rotateBtn.textContent = isRotating ? '旋转/暂停' : '已暂停 | 点击恢复';
+      rotateBtn.classList.toggle('active');
+    }
+
+    // 樱花密度切换
+    function changeSakuraDensity() {
+      sakuraDensity = sakuraDensity === 1 ? 2 : (sakuraDensity === 2 ? 0.5 : 1);
+      window.updateSakuraDensity(sakuraDensity);
+      
+      // 轻量提示
+      const densityText = sakuraDensity === 2 ? '密集' : (sakuraDensity === 0.5 ? '稀疏' : '默认');
+      const tip = document.createElement('div');
+      tip.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0,0,0,0.8);
+        color: #ffc2d1;
+        padding: 8px 15px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        z-index: 9999;
+        animation: fadeOut 2s forwards;
+      `;
+      tip.textContent = `樱花密度：${densityText}`;
+      document.body.appendChild(tip);
+      setTimeout(() => document.body.removeChild(tip), 2000);
+    }
+
+    // 提示动画样式
+    const fadeStyle = document.createElement('style');
+    fadeStyle.textContent = `
+      @keyframes fadeOut {
+        0% { opacity: 1; }
+        80% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(fadeStyle);
+
+    // 重置相册
+    function resetCube() {
+      isRotating = true;
+      cube.style.animationPlayState = "running";
+      scene.style.transform = "translate(-50%, -50%) rotateX(0deg) rotateY(0deg)";
+      rotateBtn.textContent = '旋转/暂停';
+      rotateBtn.classList.remove('active');
+    }
+
+    // 照片预览
+    function previewPhoto(el) {
+      previewImg.src = el.src;
+      previewModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    // 关闭照片预览
+    function closePreview() {
+      previewModal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    // 点击弹窗外部关闭预览
+    window.onclick = function(event) {
+      if (event.target === previewModal) closePreview();
+    };
+
+    // 背景星光效果
+    (function createStars() {
+      const stars = document.querySelector('.stars');
+      const starCount = Math.floor(window.innerWidth * window.innerHeight / 3000);
+      
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.style.cssText = `
+          position: absolute;
+          width: ${Math.random() * 3 + 1}px;
+          height: ${Math.random() * 3 + 1}px;
+          background: #fff;
+          border-radius: 50%;
+          top: ${Math.random() * 100}%;
+          left: ${Math.random() * 100}%;
+          opacity: ${Math.random() * 0.8 + 0.2};
+          animation: twinkle ${Math.random() * 5 + 3}s infinite ease-in-out;
+          animation-delay: ${Math.random() * 5}s;
+        `;
+        stars.appendChild(star);
+      }
+
+      const starStyle = document.createElement('style');
+      starStyle.textContent = `
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.8; }
+        }
+      `;
+      document.head.appendChild(starStyle);
+    })();
+
+    // 鼠标跟随旋转
+    document.addEventListener('mousemove', (e) => {
+      if (!isRotating) return;
+      const x = (e.clientX - window.innerWidth / 2) / 15;
+      const y = -(e.clientY - window.innerHeight / 2) / 15;
+      scene.style.transform = `translate(-50%, -50%) rotateY(${x}deg) rotateX(${y}deg)`;
+    });
+  </script>
+</body>
+</html>
